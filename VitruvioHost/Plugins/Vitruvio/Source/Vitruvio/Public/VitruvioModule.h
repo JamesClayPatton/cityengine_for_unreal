@@ -340,6 +340,9 @@ private:
 	FCriticalSection RegisterMeshLock;
 	TSet<TObjectPtr<UStaticMesh>> RegisteredMeshes;
 
+	FDelegateHandle OnWorldCleanupHandle;
+	void OnWorldCleanup(UWorld* World, bool bSessionEnded, bool bCleanupResources);
+
 	void NotifyGenerateCompleted() const;
 
 	TFuture<ResolveMapSPtr> LoadResolveMapAsync(URulePackage* RulePackage) const;

@@ -25,6 +25,7 @@
 #include "Util/PolygonWindings.h"
 
 #include "Async/Async.h"
+#include "Engine/World.h"
 #include "HAL/FileManager.h"
 #include "HAL/PlatformFileManager.h"
 #include "Interfaces/IPluginManager.h"
@@ -353,10 +354,14 @@ void VitruvioModule::StartupModule()
 	}
 
 	InitializePrt();
+
+	OnWorldCleanupHandle = FWorldDelegates::OnWorldCleanup.AddRaw(this, &VitruvioModule::OnWorldCleanup);
 }
 
 void VitruvioModule::ShutdownModule()
 {
+	FWorldDelegates::OnWorldCleanup.Remove(OnWorldCleanupHandle);
+
 	if (!Initialized)
 	{
 		return;
@@ -1046,6 +1051,20 @@ void VitruvioModule::InvalidateOcclusionHandles(const TArray<int64>& InitialShap
 	}
 
 	OcclusionSet->dispose(InvalidateHandles.GetData(), InvalidateHandles.Num());
+}
+
+void VitruvioModule::OnWorldCleanup(UWorld* World, bool bSessionEnded, bool bCleanupResources)
+{
+	// Cached meshes keep their collision data in the World they were generated in, which is destroyed on level changes.
+	// The editor module clears the caches when the editor map changes, but game worlds (packaged builds and PIE) are torn down
+	// without that notification, so clear them here as well.
+	if (!Initialized || !World || !World->IsGameWorld())
+	{
+		return;
+	}
+
+	MeshCache.Empty();
+	InvalidateAllOcclusionHandles();
 }
 
 void VitruvioModule::InvalidateAllOcclusionHandles()
