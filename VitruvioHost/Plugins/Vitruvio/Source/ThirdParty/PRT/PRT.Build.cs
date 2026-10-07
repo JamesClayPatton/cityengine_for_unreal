@@ -45,6 +45,10 @@ public class PRT : ModuleRules
 		{
 			Platform = new WindowsPlatform(Debug);
 		}
+		else if (Target.Platform == UnrealTargetPlatform.Linux)
+		{
+			Platform = new LinuxPlatform(Debug);
+		}
 		else
 		{
 			throw new System.PlatformNotSupportedException();
@@ -123,6 +127,9 @@ public class PRT : ModuleRules
 				Copy(Path.Combine(ModuleDirectory, PrtLibName, "lib"), Path.Combine(ModuleDirectory, LibDir), FilteredExtensionLibraries);
 				Copy(Path.Combine(ModuleDirectory, PrtLibName, "bin"), Path.Combine(ModuleDirectory, BinDir));
 				Copy(Path.Combine(ModuleDirectory, PrtLibName, "include"), Path.Combine(ModuleDirectory, "include"));
+
+				string VersionFile = Path.Combine(ModuleDirectory, PrtLibName, "cmake", "prtVersion.properties");
+				if (File.Exists(VersionFile)) File.Copy(VersionFile, Path.Combine(BinDir, "prtVersion.properties"));
 			}
 			finally
 			{
@@ -211,7 +218,7 @@ public class PRT : ModuleRules
 
 	private abstract class AbstractZipExtractor
 	{
-		public void Unzip(string WorkingDir, string ZipFile, string Destination)
+		public virtual void Unzip(string WorkingDir, string ZipFile, string Destination)
 		{
 			string ExpandedArguments = string.Format(Arguments, ZipFile, Destination);
 
@@ -231,8 +238,17 @@ public class PRT : ModuleRules
 			UnzipProcess.WaitForExit();
 		}
 
-		public abstract string Command { get; }
-		public abstract string Arguments { get; }
+		public virtual string Command { get { return string.Empty; } }
+		public virtual string Arguments { get { return string.Empty; } }
+	}
+
+	// Uses .NET directly since the build host is not necessarily the target platform (e.g. cross-compiling for Linux on Windows)
+	private class DotNetZipExtractor : AbstractZipExtractor
+	{
+		public override void Unzip(string WorkingDir, string ZipFile, string Destination)
+		{
+			System.IO.Compression.ZipFile.ExtractToDirectory(Path.Combine(WorkingDir, ZipFile), Path.Combine(WorkingDir, Destination));
+		}
 	}
 
 	private class WindowsZipExtractor : AbstractZipExtractor
@@ -357,6 +373,55 @@ public class PRT : ModuleRules
 			};
 			FileVersionProcess.Start();
 			FileVersionProcess.WaitForExit();
+		}
+	}
+
+	private class LinuxPlatform : AbstractPlatform
+	{
+		public override AbstractZipExtractor ZipExtractor { get { return new DotNetZipExtractor(); } }
+
+		public override string Name { get { return "Linux"; } }
+		public override string DynamicLibExtension { get { return ".so"; } }
+		public override string Toolchain { get { return "rhel8-gcc112-x86_64-rel-opt"; } }
+		public override string CoreLibraryName { get { return "lib" + base.CoreLibraryName; } }
+
+		public LinuxPlatform(bool Debug) : base(Debug)
+		{
+		}
+
+		public override void AddPrtCoreLibrary(string LibraryPath, string LibraryName, ModuleRules Rules)
+		{
+			if (Path.GetExtension(LibraryName) == DynamicLibExtension)
+			{
+				if (Debug) Console.WriteLine("Adding Runtime Library " + LibraryName);
+
+				Rules.RuntimeDependencies.Add(LibraryPath);
+				Rules.PublicAdditionalLibraries.Add(LibraryPath);
+			}
+		}
+
+		// .so files carry no version resource, so read the version file copied from the SDK instead
+		public override string GetFileVersionInfo(string WorkingDir, string LibraryPath)
+		{
+			string VersionFile = Path.Combine(Path.GetDirectoryName(LibraryPath), "prtVersion.properties");
+			if (!File.Exists(VersionFile))
+			{
+				return "0.0 0";
+			}
+
+			Dictionary<string, string> Properties = File.ReadAllLines(VersionFile)
+				.Where(Line => Line.Contains('='))
+				.ToDictionary(Line => Line.Split('=')[0].Trim(), Line => Line.Split('=')[1].Trim());
+			return string.Format("{0}.{1} {2}", Properties["PRT_VERSION_MAJOR"], Properties["PRT_VERSION_MINOR"], Properties["PRT_VERSION_MICRO"]);
+		}
+
+		public override void DownloadFile(string Url, string Destination)
+		{
+			using (System.Net.Http.HttpClient Client = new System.Net.Http.HttpClient())
+			{
+				byte[] Data = Client.GetByteArrayAsync(Url.Replace('\\', '/')).Result;
+				File.WriteAllBytes(Destination, Data);
+			}
 		}
 	}
 }
