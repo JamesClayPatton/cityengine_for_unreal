@@ -32,3 +32,13 @@ Installation updates `Source\ThirdParty\UnrealGeometryEncoderLib` with the DLL, 
 ```bat
 cmake --install UnrealGeometryEncoder\Build --prefix "C:\temp\UnrealGeometryEncoder"
 ```
+
+## Linux
+
+The Linux library is built from the same CMake project inside a Rocky Linux 8 container, so it uses the same compiler family and C++ standard library as the Linux PRT SDK (RHEL 8, GCC 14). This only requires Docker. From this `Extras` directory:
+
+```sh
+docker build --output type=local,dest=../Source/ThirdParty/UnrealGeometryEncoderLib/lib/Linux/Release UnrealGeometryEncoder
+```
+
+This replaces `libUnrealGeometryEncoder.so`. The public headers are shared with Windows and are installed by the Windows build.
