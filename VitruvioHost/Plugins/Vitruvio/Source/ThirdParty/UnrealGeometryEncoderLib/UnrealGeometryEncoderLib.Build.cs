@@ -24,14 +24,24 @@ public class UnrealGeometryEncoderLib : ModuleRules
 		bEnableExceptions = true;
 		Type = ModuleType.External;
 
-		string LibDir = Path.Combine(ModuleDirectory, "lib", "Win64", "Release");
 		string IncludeDir = Path.Combine(ModuleDirectory, "include");
-		string EncoderDllName = "UnrealGeometryEncoder.dll";
 
-		RuntimeDependencies.Add(Path.Combine(LibDir, EncoderDllName));
-		PublicDelayLoadDLLs.Add(EncoderDllName);
+		if (Target.Platform == UnrealTargetPlatform.Linux)
+		{
+			// Loaded by PRT as an extension at runtime, so it only needs to be staged
+			string LibDir = Path.Combine(ModuleDirectory, "lib", "Linux", "Release");
+			RuntimeDependencies.Add(Path.Combine(LibDir, "libUnrealGeometryEncoder.so"));
+		}
+		else
+		{
+			string LibDir = Path.Combine(ModuleDirectory, "lib", "Win64", "Release");
+			string EncoderDllName = "UnrealGeometryEncoder.dll";
 
-		PublicAdditionalLibraries.Add(Path.Combine(LibDir, "UnrealGeometryEncoder.lib"));
+			RuntimeDependencies.Add(Path.Combine(LibDir, EncoderDllName));
+			PublicDelayLoadDLLs.Add(EncoderDllName);
+
+			PublicAdditionalLibraries.Add(Path.Combine(LibDir, "UnrealGeometryEncoder.lib"));
+		}
 
 		PublicSystemIncludePaths.Add(IncludeDir);
 	}
