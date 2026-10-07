@@ -324,11 +324,13 @@ void VitruvioModule::InitializePrt()
 	FPlatformProcess::AddDllDirectory(*PrtLibDir);
 	PrtDllHandle = FPlatformProcess::GetDllHandle(*PrtLibPath);
 
-	TArray<wchar_t*> PRTPluginsPaths;
-	const FString EncoderExtensionPath = GetEncoderExtensionPath();
-	const FString PrtExtensionPaths = GetPrtLibDir();
-	PRTPluginsPaths.Add(const_cast<wchar_t*>(TCHAR_TO_WCHAR(*EncoderExtensionPath)));
-	PRTPluginsPaths.Add(const_cast<wchar_t*>(TCHAR_TO_WCHAR(*PrtExtensionPaths)));
+	// TCHAR_TO_WCHAR returns a temporary buffer on platforms where TCHAR and wchar_t differ (e.g. Linux),
+	// so keep the converted paths alive until prt::init has been called
+	const std::wstring EncoderExtensionPath(TCHAR_TO_WCHAR(*GetEncoderExtensionPath()));
+	const std::wstring PrtExtensionPath(TCHAR_TO_WCHAR(*GetPrtLibDir()));
+	TArray<const wchar_t*> PRTPluginsPaths;
+	PRTPluginsPaths.Add(EncoderExtensionPath.c_str());
+	PRTPluginsPaths.Add(PrtExtensionPath.c_str());
 
 	LogHandler = MakeUnique<UnrealLogHandler>();
 	prt::addLogHandler(LogHandler.Get());
