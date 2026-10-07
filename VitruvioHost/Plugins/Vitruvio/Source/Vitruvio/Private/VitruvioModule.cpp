@@ -270,6 +270,8 @@ FString GetPlatformName()
 {
 #if PLATFORM_WINDOWS
 	return "Win64";
+#elif PLATFORM_LINUX
+	return "Linux";
 #elif PLATFORM_MAC
 	return "Mac";
 #else
@@ -309,7 +311,11 @@ FString GetPrtBinDir()
 FString GetPrtDllPath()
 {
 	const FString BaseDir = GetPrtBinDir();
+#if PLATFORM_LINUX
+	return FPaths::Combine(*BaseDir, TEXT("libcom.esri.prt.core.so"));
+#else
 	return FPaths::Combine(*BaseDir, TEXT("com.esri.prt.core.dll"));
+#endif
 }
 
 } // namespace
