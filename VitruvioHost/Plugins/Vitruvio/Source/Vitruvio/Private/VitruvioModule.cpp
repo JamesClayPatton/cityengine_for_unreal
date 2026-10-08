@@ -407,7 +407,7 @@ void VitruvioModule::ShutdownModule()
 
 Vitruvio::FTextureData VitruvioModule::DecodeTexture(UObject* Outer, const FString& Path, const FString& Key) const
 {
-	const prt::AttributeMap* TextureMetadataAttributeMap = prt::createTextureMetadata(*Path, PrtCache.get());
+	const prt::AttributeMap* TextureMetadataAttributeMap = prt::createTextureMetadata(TCHAR_TO_WCHAR(*Path), PrtCache.get());
 	Vitruvio::FTextureMetadata TextureMetadata = Vitruvio::ParseTextureMetadata(TextureMetadataAttributeMap);
 
 	size_t BufferSize = TextureMetadata.Width * TextureMetadata.Height * TextureMetadata.Bands * TextureMetadata.BytesPerBand;
@@ -477,7 +477,7 @@ FGenerateResultDescription VitruvioModule::BatchGenerate(TArray<FInitialShape> I
 		const RuleFileInfoPtr RuleFileInfo = prt_make_shared<const prt::RuleFileInfo>(prt::createRuleFileInfo(RuleFileUri));
 		const std::wstring StartRule = prtu::detectStartRule(RuleFileInfo);
 		
-		FStartRuleInfo StartRuleInfo { ResolveMap, RuleFile.c_str(), StartRule.c_str(), RuleFileInfo };
+		FStartRuleInfo StartRuleInfo { ResolveMap, WCHAR_TO_TCHAR(RuleFile.c_str()), WCHAR_TO_TCHAR(StartRule.c_str()), RuleFileInfo };
 
 		RuleInfoInitialShapes.Add(MakeTuple(StartRuleInfo, MoveTemp(InitialShapesByRpk)));
 	}
@@ -511,7 +511,7 @@ FGenerateResultDescription VitruvioModule::BatchGenerate(TArray<FInitialShape> I
 		SetInitialShapeGeometry(InitialShapeBuilder, InitialShape);
 
 		AttributeMapUPtr Attributes = Vitruvio::CreateAttributeMap(InitialShape.Attributes);
-		InitialShapeBuilder->setAttributes(*StartRuleInfo.RuleFile, *StartRuleInfo.StartRule, InitialShape.RandomSeed, L"",
+		InitialShapeBuilder->setAttributes(TCHAR_TO_WCHAR(*StartRuleInfo.RuleFile), TCHAR_TO_WCHAR(*StartRuleInfo.StartRule), InitialShape.RandomSeed, L"",
 			Attributes.get(), StartRuleInfo.ResolveMap.get());
 		InitialShapeUPtr Shape(InitialShapeBuilder->createInitialShape());
 
@@ -588,7 +588,7 @@ FGenerateResultDescription VitruvioModule::BatchGenerate(TArray<FInitialShape> I
 			SetInitialShapeGeometry(InitialShapeBuilder, InitialShape);
 			
 			AttributeMapUPtr Attributes = Vitruvio::CreateAttributeMap(InitialShape.Attributes);
-			InitialShapeBuilder->setAttributes(*StartRuleInfo.RuleFile, *StartRuleInfo.StartRule, InitialShape.RandomSeed, L"",
+			InitialShapeBuilder->setAttributes(TCHAR_TO_WCHAR(*StartRuleInfo.RuleFile), TCHAR_TO_WCHAR(*StartRuleInfo.StartRule), InitialShape.RandomSeed, L"",
 				Attributes.get(), StartRuleInfo.ResolveMap.get());
 			
 			InitialShapeUPtr Shape(InitialShapeBuilder->createInitialShape());
@@ -926,7 +926,7 @@ TArray<FAttributeMapPtr> VitruvioModule::BatchEvaluateRuleAttributes(TArray<FIni
 		const RuleFileInfoPtr RuleFileInfo = prt_make_shared<const prt::RuleFileInfo>(prt::createRuleFileInfo(RuleFileUri));
 		const std::wstring StartRule = prtu::detectStartRule(RuleFileInfo);
 		
-		FStartRuleInfo StartRuleInfo { ResolveMap, RuleFile.c_str(), StartRule.c_str(), RuleFileInfo };
+		FStartRuleInfo StartRuleInfo { ResolveMap, WCHAR_TO_TCHAR(RuleFile.c_str()), WCHAR_TO_TCHAR(StartRule.c_str()), RuleFileInfo };
 
 		RuleInfoInitialShapes.Add(MakeTuple(StartRuleInfo, MoveTemp(InitialShapesByRpk)));
 	}
@@ -956,7 +956,7 @@ TArray<FAttributeMapPtr> VitruvioModule::BatchEvaluateRuleAttributes(TArray<FIni
 		SetInitialShapeGeometry(InitialShapeBuilder, InitialShape);
 
 		AttributeMapUPtr Attributes = Vitruvio::CreateAttributeMap(InitialShape.Attributes);
-		InitialShapeBuilder->setAttributes(*StartRuleInfo.RuleFile, *StartRuleInfo.StartRule, InitialShape.RandomSeed, L"",
+		InitialShapeBuilder->setAttributes(TCHAR_TO_WCHAR(*StartRuleInfo.RuleFile), TCHAR_TO_WCHAR(*StartRuleInfo.StartRule), InitialShape.RandomSeed, L"",
 			Attributes.get(), StartRuleInfo.ResolveMap.get());
 		InitialShapeUPtr Shape(InitialShapeBuilder->createInitialShape());
 		InitialShapePtrs.push_back(Shape.get());

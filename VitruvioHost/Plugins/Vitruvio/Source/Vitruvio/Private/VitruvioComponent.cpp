@@ -175,7 +175,7 @@ void SetAttribute(UVitruvioComponent* VitruvioComponent, TMap<FString, URuleAttr
 		Attribute = NewObject<TAttributeType>(VitruvioComponent);
 		Attribute->SetFlags(RF_Transactional);
 		Attribute->Name = Name;
-		Attribute->DisplayName = WCHAR_TO_TCHAR(prtu::removeImport(prtu::removeStyle(*Name)).c_str());
+		Attribute->DisplayName = WCHAR_TO_TCHAR(prtu::removeImport(prtu::removeStyle(TCHAR_TO_WCHAR(*Name))).c_str());
 
 		Attributes.Add(Name, Attribute);
 	}
