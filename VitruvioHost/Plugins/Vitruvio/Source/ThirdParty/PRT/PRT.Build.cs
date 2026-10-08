@@ -59,15 +59,21 @@ public class PRT : ModuleRules
 		string VersionPath = Path.Combine(ModuleDirectory, "PRT.version.json");
 		ExternalDependencies.Add(VersionPath);
 		JsonObject Version = JsonObject.Read(new FileReference(VersionPath));
+		// The Linux SDK has its own toolchain and digest in the "linux" section, the rest of the metadata is shared
+		JsonObject PlatformVersion = Version;
+		if (Platform.MetadataSection != null && !Version.TryGetObjectField(Platform.MetadataSection, out PlatformVersion))
+		{
+			throw new BuildException($"Invalid PRT SDK metadata in {VersionPath}: missing \"{Platform.MetadataSection}\" section.");
+		}
 		if (!Version.TryGetIntegerField("major", out int PrtMajor) || PrtMajor <= 0 ||
 			!Version.TryGetIntegerField("minor", out int PrtMinor) || PrtMinor < 0 ||
 			!Version.TryGetIntegerField("build", out int PrtBuild) || PrtBuild <= 0 ||
-			!Version.TryGetStringField("toolchain", out string PrtToolchain) ||
-			!Regex.IsMatch(PrtToolchain, @"^win[0-9]+-vc[0-9]{4}-x86_64-rel-opt$") ||
-			!Version.TryGetStringField("sha256", out string PrtSha256) ||
+			!PlatformVersion.TryGetStringField("toolchain", out string PrtToolchain) ||
+			!Regex.IsMatch(PrtToolchain, Platform.ToolchainPattern) ||
+			!PlatformVersion.TryGetStringField("sha256", out string PrtSha256) ||
 			!Regex.IsMatch(PrtSha256, @"^[0-9a-fA-F]{64}$"))
 		{
-			throw new BuildException($"Invalid PRT SDK metadata in {VersionPath}: expected major/minor/build, a Windows x64 release toolchain, and a SHA-256 digest.");
+			throw new BuildException($"Invalid PRT SDK metadata in {VersionPath}: expected major/minor/build, a {Platform.Name} x64 release toolchain, and a SHA-256 digest.");
 		}
 
 		string LibDir = Path.Combine(ModuleDirectory, "lib", Platform.Name, "Release");
@@ -280,6 +286,9 @@ public class PRT : ModuleRules
 		public abstract string Name { get; }
 		public abstract string DynamicLibExtension { get; }
 		public virtual string CoreLibraryName { get { return "com.esri.prt.core" + DynamicLibExtension; } }
+		// Section of PRT.version.json with the toolchain and digest of this platform, null for the top level
+		public virtual string MetadataSection { get { return null; } }
+		public abstract string ToolchainPattern { get; }
 
 		protected bool Debug;
 		public AbstractPlatform(bool Debug)
@@ -320,6 +329,7 @@ public class PRT : ModuleRules
 
 		public override string Name { get { return "Win64"; } }
 		public override string DynamicLibExtension { get { return ".dll"; } }
+		public override string ToolchainPattern { get { return @"^win[0-9]+-vc[0-9]{4}-x86_64-rel-opt$"; } }
 		
 		public WindowsPlatform(bool Debug) : base(Debug)
 		{
@@ -395,7 +405,8 @@ public class PRT : ModuleRules
 
 		public override string Name { get { return "Linux"; } }
 		public override string DynamicLibExtension { get { return ".so"; } }
-		public override string Toolchain { get { return "rhel8-gcc112-x86_64-rel-opt"; } }
+		public override string MetadataSection { get { return "linux"; } }
+		public override string ToolchainPattern { get { return @"^rhel[0-9]+-gcc[0-9]+-x86_64-rel-opt$"; } }
 		public override string CoreLibraryName { get { return "lib" + base.CoreLibraryName; } }
 
 		public LinuxPlatform(bool Debug) : base(Debug)
