@@ -145,24 +145,24 @@ public:
 
 	virtual prt::Status generateError(size_t /*isIndex*/, prt::Status /*status*/, const wchar_t* message) override
 	{
-		UE_LOG(LogUnrealCallbacks, Error, TEXT("GENERATE ERROR: %s"), message)
+		UE_LOG(LogUnrealCallbacks, Error, TEXT("GENERATE ERROR: %s"), WCHAR_TO_TCHAR(message))
 		return prt::STATUS_OK;
 	}
 	virtual prt::Status assetError(size_t /*isIndex*/, prt::CGAErrorLevel /*level*/, const wchar_t* /*key*/, const wchar_t* /*uri*/,
 						   const wchar_t* message) override
 	{
-		UE_LOG(LogUnrealCallbacks, Error, TEXT("ASSET ERROR: %s"), message)
+		UE_LOG(LogUnrealCallbacks, Error, TEXT("ASSET ERROR: %s"), WCHAR_TO_TCHAR(message))
 		return prt::STATUS_OK;
 	}
 	virtual prt::Status cgaError(size_t /*isIndex*/, int32_t /*shapeID*/, prt::CGAErrorLevel /*level*/, int32_t /*methodId*/, int32_t /*pc*/,
 						 const wchar_t* message) override
 	{
-		UE_LOG(LogUnrealCallbacks, Error, TEXT("CGA ERROR: %s"), message)
+		UE_LOG(LogUnrealCallbacks, Error, TEXT("CGA ERROR: %s"), WCHAR_TO_TCHAR(message))
 		return prt::STATUS_OK;
 	}
 	virtual prt::Status cgaPrint(size_t /*isIndex*/, int32_t /*shapeID*/, const wchar_t* txt) override
 	{
-		UE_LOG(LogUnrealCallbacks, Display, TEXT("CGA Print: %s"), txt)
+		UE_LOG(LogUnrealCallbacks, Display, TEXT("CGA Print: %s"), WCHAR_TO_TCHAR(txt))
 		return prt::STATUS_OK;
 	}
 
