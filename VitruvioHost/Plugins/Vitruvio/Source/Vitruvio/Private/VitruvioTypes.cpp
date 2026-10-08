@@ -54,7 +54,7 @@ FString FirstValidTextureUri(const prt::AttributeMap* MaterialAttributes, wchar_
 	wchar_t const* const* Values = MaterialAttributes->getStringArray(Key, &ValuesCount);
 	for (int ValueIndex = 0; ValueIndex < ValuesCount; ++ValueIndex)
 	{
-		FString TextureUri(Values[ValueIndex]);
+		FString TextureUri(WCHAR_TO_TCHAR(Values[ValueIndex]));
 		if (TextureUri.Len() > 0)
 		{
 			return TextureUri;
@@ -69,7 +69,7 @@ FString GetTextureUriFromIdx(const prt::AttributeMap* MaterialAttributes, wchar_
 	wchar_t const* const* Values = MaterialAttributes->getStringArray(Key, &ValuesCount);
 	if (Index < ValuesCount)
 	{
-		FString TextureUri(Values[Index]);
+		FString TextureUri(WCHAR_TO_TCHAR(Values[Index]));
 
 		if (TextureUri.Len() > 0)
 		{
@@ -102,7 +102,7 @@ FMaterialAttributeContainer::FMaterialAttributeContainer(const prt::AttributeMap
 	for (size_t KeyIndex = 0; KeyIndex < KeyCount; KeyIndex++)
 	{
 		const wchar_t* Key = Keys[KeyIndex];
-		const FString KeyString(Key);
+		const FString KeyString(WCHAR_TO_TCHAR(Key));
 
 		if (!KeyToTypeMap.Contains(KeyString))
 		{
@@ -143,7 +143,7 @@ FMaterialAttributeContainer::FMaterialAttributeContainer(const prt::AttributeMap
 			ScalarProperties.Add(KeyString, AttributeMap->getFloat(Key));
 			break;
 		case EMaterialPropertyType::String:
-			StringProperties.Add(KeyString, AttributeMap->getString(Key));
+			StringProperties.Add(KeyString, WCHAR_TO_TCHAR(AttributeMap->getString(Key)));
 			break;
 		default:;
 		}
@@ -151,12 +151,12 @@ FMaterialAttributeContainer::FMaterialAttributeContainer(const prt::AttributeMap
 
 	if (AttributeMap->hasKey(L"opacityMap.mode"))
 	{
-		BlendMode = AttributeMap->getString(L"opacityMap.mode");
+		BlendMode = WCHAR_TO_TCHAR(AttributeMap->getString(L"opacityMap.mode"));
 	}
 
 	if (AttributeMap->hasKey(L"name"))
 	{
-		Name = AttributeMap->getString(L"name");
+		Name = WCHAR_TO_TCHAR(AttributeMap->getString(L"name"));
 	}
 }
 

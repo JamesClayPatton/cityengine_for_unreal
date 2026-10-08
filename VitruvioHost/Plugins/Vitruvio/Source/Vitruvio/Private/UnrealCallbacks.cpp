@@ -246,7 +246,7 @@ TMap<FString, FReport> ExtractReports(const prt::AttributeMap* reports)
 		auto key = Keys[i];
 
 		FReport Report;
-		Report.Name = key;
+		Report.Name = WCHAR_TO_TCHAR(key);
 		switch (reports->getType(key))
 		{
 		case prt::AttributeMap::PrimitiveType::PT_BOOL:
@@ -255,7 +255,7 @@ TMap<FString, FReport> ExtractReports(const prt::AttributeMap* reports)
 			break;
 		case prt::AttributeMap::PrimitiveType::PT_STRING:
 			Report.Type = EReportPrimitiveType::String;
-			Report.Value = reports->getString(key);
+			Report.Value = WCHAR_TO_TCHAR(reports->getString(key));
 			break;
 		case prt::AttributeMap::PrimitiveType::PT_FLOAT:
 			Report.Type = EReportPrimitiveType::Float;
@@ -304,13 +304,13 @@ void UnrealCallbacks::addMesh(const wchar_t* name, const wchar_t* meshId, int32_
 	}
 	else
 	{
-		const FString NameString(name);
-		const FString IdentifierString(meshId);
+		const FString NameString(WCHAR_TO_TCHAR(name));
+		const FString IdentifierString(WCHAR_TO_TCHAR(meshId));
 
 		if (const TSharedPtr<FVitruvioMesh> Mesh = VitruvioModule::Get().GetMeshCache().Get(IdentifierString))
 		{
-			InstanceMeshes.Add(meshId, Mesh);
-			InstanceNames.Add(meshId, NameString);
+			InstanceMeshes.Add(WCHAR_TO_TCHAR(meshId), Mesh);
+			InstanceNames.Add(WCHAR_TO_TCHAR(meshId), NameString);
 			return;
 		}
 		
@@ -324,8 +324,8 @@ void UnrealCallbacks::addMesh(const wchar_t* name, const wchar_t* meshId, int32_
 			TSharedPtr<FVitruvioMesh> Mesh = CreateVitruvioMesh(IdentifierString, InstanceModelDescription.MeshDescription, InstanceModelDescription.Materials);
 			Mesh = VitruvioModule::Get().GetMeshCache().InsertOrGet(IdentifierString, Mesh);
 
-			InstanceMeshes.Add(meshId, Mesh);
-			InstanceNames.Add(meshId, NameString);
+			InstanceMeshes.Add(WCHAR_TO_TCHAR(meshId), Mesh);
+			InstanceNames.Add(WCHAR_TO_TCHAR(meshId), NameString);
 		}
 	}
 }
@@ -371,7 +371,7 @@ void UnrealCallbacks::addInstance(int32_t prototypeId, const wchar_t* meshId, co
 	const FVector CEScale = FVector(Scale.X, Scale.Z, Scale.Y);
 	const FVector CETranslation = FVector(Translation.X, Translation.Z, Translation.Y) * PRT_TO_UE_SCALE - Offset;
 
-	if (!InstanceMeshes.Contains(meshId))
+	if (!InstanceMeshes.Contains(WCHAR_TO_TCHAR(meshId)))
 	{
 		UE_LOG(LogUnrealCallbacks, Warning, TEXT("No mesh found for meshId %s"), meshId);
 		return;
@@ -389,7 +389,7 @@ void UnrealCallbacks::addInstance(int32_t prototypeId, const wchar_t* meshId, co
 		}
 	}
 
-	Instances.FindOrAdd({meshId, MaterialOverrides}).Add(Transform);
+	Instances.FindOrAdd({WCHAR_TO_TCHAR(meshId), MaterialOverrides}).Add(Transform);
 }
 
 prt::Status UnrealCallbacks::attrBool(size_t isIndex, int32_t shapeID, const wchar_t* key, bool value)

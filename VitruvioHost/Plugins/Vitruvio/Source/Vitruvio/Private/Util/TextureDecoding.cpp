@@ -32,11 +32,11 @@ struct FTextureSettings
 
 FTextureSettings GetTextureSettings(const FString& Key, EPixelFormat PixelFormat)
 {
-	if (Key == L"normalMap")
+	if (Key == TEXT("normalMap"))
 	{
 		return {false, TC_Normalmap};
 	}
-	if (Key == L"roughnessMap" || Key == L"metallicMap")
+	if (Key == TEXT("roughnessMap") || Key == TEXT("metallicMap"))
 	{
 		return {false, TC_Masks};
 	}
@@ -56,7 +56,7 @@ FTextureMetadata ParseTextureMetadata(const prt::AttributeMap* TextureMetadata)
 	Result.BytesPerBand = 0;
 	Result.Bands = 0;
 
-	FString Format(TextureMetadata->getString(L"format"));
+	FString Format(WCHAR_TO_TCHAR(TextureMetadata->getString(L"format")));
 	if (Format == TEXT("GREY8"))
 	{
 		Result.BytesPerBand = 1;
