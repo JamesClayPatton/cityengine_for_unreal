@@ -73,7 +73,8 @@ public class PRT : ModuleRules
 		string IncludeDir = Path.Combine(ModuleDirectory, "include");
 
 		// 1. Check if prt is already available and has correct version, otherwise download from official github repo
-		bool PrtInstalled = Directory.Exists(LibDir) && Directory.Exists(BinDir);
+		// The include folder is shared between platforms and is removed when downloading PRT for another platform
+		bool PrtInstalled = Directory.Exists(LibDir) && Directory.Exists(BinDir) && File.Exists(Path.Combine(IncludeDir, "prt", "API.h"));
 		
 		string PrtCorePath = Path.Combine(BinDir, Platform.CoreLibraryName);
 		bool PrtCoreExists = File.Exists(PrtCorePath);
