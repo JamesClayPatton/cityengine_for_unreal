@@ -402,6 +402,7 @@ public class PRT : ModuleRules
 		{
 		}
 
+		// PRT is not linked on Linux but loaded at runtime (see PrtLinuxLoader.h), so it only needs to be staged
 		public override void AddPrtCoreLibrary(string LibraryPath, string LibraryName, ModuleRules Rules)
 		{
 			if (Path.GetExtension(LibraryName) == DynamicLibExtension)
@@ -409,7 +410,6 @@ public class PRT : ModuleRules
 				if (Debug) Console.WriteLine("Adding Runtime Library " + LibraryName);
 
 				Rules.RuntimeDependencies.Add(LibraryPath);
-				Rules.PublicAdditionalLibraries.Add(LibraryPath);
 			}
 		}
 

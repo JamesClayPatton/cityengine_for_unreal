@@ -19,6 +19,7 @@
 
 #include "PRTTypes.h"
 #include "PRTUtils.h"
+#include "PrtLinuxLoader.h"
 #include "TextureDecoding.h"
 #include "UnrealCallbacks.h"
 
@@ -326,9 +327,23 @@ void VitruvioModule::InitializePrt()
 	const FString PrtBinDir = GetPrtBinDir();
 	const FString PrtLibDir = GetPrtLibDir();
 
+#if PLATFORM_LINUX
+	const FString EncoderLibraryPath = FPaths::Combine(GetEncoderExtensionPath(), TEXT("libUnrealGeometryEncoder.so"));
+	std::string LoadError;
+	if (!PrtLinuxLoader::Load(TCHAR_TO_UTF8(*EncoderLibraryPath), TCHAR_TO_UTF8(*PrtLibPath), LoadError))
+	{
+		UE_LOG(LogUnrealPrt, Error, TEXT("Could not load PRT from %s: %s"), *PrtLibPath, UTF8_TO_TCHAR(LoadError.c_str()));
+		return;
+	}
+	if (!LoadError.empty())
+	{
+		UE_LOG(LogUnrealPrt, Warning, TEXT("%s"), UTF8_TO_TCHAR(LoadError.c_str()));
+	}
+#else
 	FPlatformProcess::AddDllDirectory(*PrtBinDir);
 	FPlatformProcess::AddDllDirectory(*PrtLibDir);
 	PrtDllHandle = FPlatformProcess::GetDllHandle(*PrtLibPath);
+#endif
 
 	// TCHAR_TO_WCHAR returns a temporary buffer on platforms where TCHAR and wchar_t differ (e.g. Linux),
 	// so keep the converted paths alive until prt::init has been called
