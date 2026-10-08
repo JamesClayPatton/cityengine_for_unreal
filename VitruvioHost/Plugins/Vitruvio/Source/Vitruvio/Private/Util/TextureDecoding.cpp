@@ -40,7 +40,7 @@ FTextureSettings GetTextureSettings(const FString& Key, EPixelFormat PixelFormat
 	{
 		return {false, TC_Masks};
 	}
-	bool IsGrayscale = PixelFormat == EPixelFormat::PF_G8 || PixelFormat == EPixelFormat::PF_G16 || EPixelFormat::PF_R32_FLOAT;
+	bool IsGrayscale = PixelFormat == EPixelFormat::PF_G8 || PixelFormat == EPixelFormat::PF_G16 || PixelFormat == EPixelFormat::PF_R32_FLOAT;
 	return {!IsGrayscale, TC_Default};
 }
 } // namespace
