@@ -13,8 +13,6 @@
  * limitations under the License.
  */
 
-#pragma once
-
 #include "UnrealCallbacks.h"
 
 #include "Util/MaterialConversion.h"

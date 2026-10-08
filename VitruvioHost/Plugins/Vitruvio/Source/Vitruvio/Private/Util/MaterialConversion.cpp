@@ -13,8 +13,6 @@
  * limitations under the License.
  */
 
-#pragma once
-
 #include "MaterialConversion.h"
 #include "Runtime/Engine/Public/TextureResource.h"
 #include "Engine/Texture2D.h"

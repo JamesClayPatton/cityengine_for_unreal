@@ -13,8 +13,6 @@
  * limitations under the License.
  */
 
-#pragma once
-
 #include "Util/AttributeConversion.h"
 
 #include "AnnotationParsing.h"
