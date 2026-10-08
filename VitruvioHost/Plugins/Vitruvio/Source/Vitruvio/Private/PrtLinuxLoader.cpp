@@ -282,6 +282,13 @@ double Callbacks::cgaGetCoord(size_t isIndex, CoordSelector sel, double x, doubl
 	return Function(this, isIndex, sel, x, y, z, stat);
 }
 
+Status Callbacks::cgaGetCoords(size_t isIndex, CoordSystemSelector sel, double* coords, size_t vertexCount)
+{
+	static const auto Function = PrtLinuxLoader::Private::Resolve<Status (*)(Callbacks*, size_t, CoordSystemSelector, double*, size_t)>(
+		"_ZN3prt9Callbacks12cgaGetCoordsEmNS0_19CoordSystemSelectorEPdm");
+	return Function(this, isIndex, sel, coords, vertexCount);
+}
+
 Callbacks::Continuation Callbacks::progress(float percentageCompleted)
 {
 	static const auto Function = PrtLinuxLoader::Private::Resolve<Continuation (*)(Callbacks*, float)>("_ZN3prt9Callbacks8progressEf");
