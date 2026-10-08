@@ -28,7 +28,6 @@ public class PRT : ModuleRules
 {
 	private readonly bool Debug;
 
-	private const string PrtCoreDllName = "com.esri.prt.core.dll";
 
 	private static readonly List<string> FilteredExtensionLibraries = new List<string>() { "DatasmithSDK.dll", "FreeImage317.dll", "com.esri.prt.unreal.dll" };
 
@@ -72,7 +71,7 @@ public class PRT : ModuleRules
 		// 1. Check if prt is already available and has correct version, otherwise download from official github repo
 		bool PrtInstalled = Directory.Exists(LibDir) && Directory.Exists(BinDir);
 		
-		string PrtCorePath = Path.Combine(BinDir, PrtCoreDllName);
+		string PrtCorePath = Path.Combine(BinDir, Platform.CoreLibraryName);
 		bool PrtCoreExists = File.Exists(PrtCorePath);
 		bool PrtVersionMatch = PrtCoreExists && CheckDllVersion(Platform, PrtCorePath, PrtMajor, PrtMinor, PrtBuild);
 
@@ -255,6 +254,7 @@ public class PRT : ModuleRules
 
 		public abstract string Name { get; }
 		public abstract string DynamicLibExtension { get; }
+		public virtual string CoreLibraryName { get { return "com.esri.prt.core" + DynamicLibExtension; } }
 
 		protected bool Debug;
 		public AbstractPlatform(bool Debug)
