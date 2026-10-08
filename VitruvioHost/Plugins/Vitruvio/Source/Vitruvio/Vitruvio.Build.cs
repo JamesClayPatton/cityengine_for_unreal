@@ -20,7 +20,8 @@ public class Vitruvio : ModuleRules
 {
 	public Vitruvio(ReadOnlyTargetRules Target) : base(Target)
 	{
-		bUseRTTI = true;
+		// The engine is built without RTTI, so on Linux (clang) modules using RTTI fail to link against engine classes
+		bUseRTTI = Target.Platform != UnrealTargetPlatform.Linux;
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 		PrecompileForTargets = PrecompileTargetsType.Any;
 		bPrecompile = true;
