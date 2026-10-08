@@ -140,10 +140,21 @@ target_compile_definitions(UnrealGeometryEncoder PRIVATE
 	_ITERATOR_DEBUG_LEVEL=0
 )
 if(PRT_PLATFORM STREQUAL "Linux")
-	target_link_libraries(UnrealGeometryEncoder PRIVATE ${PRT_LINK_LIBRARIES})
+	# Vitruvio loads this library with RTLD_DEEPBIND as the root of all PRT libraries (see OperatorNewForwarding.cpp), so
+	# it links all PRT libraries and finds them relative to its location in the plugin. DT_RPATH (not DT_RUNPATH) is used
+	# as it also applies to their own dependencies (e.g. glutess of the PRT core library).
+	target_sources(UnrealGeometryEncoder PRIVATE
+		Private/Codec/Encoder/PrtAdapters.cpp
+		Private/Codec/Encoder/OperatorNewForwarding.cpp
+	)
+	file(GLOB PRT_EXTENSION_LIBRARIES "${PRT_EXTENSION_PATH}/*.so*")
+	target_link_libraries(UnrealGeometryEncoder PRIVATE
+		-Wl,--no-as-needed ${PRT_LINK_LIBRARIES} ${PRT_EXTENSION_LIBRARIES} -Wl,--as-needed ${CMAKE_DL_LIBS})
+	target_link_options(UnrealGeometryEncoder PRIVATE -Wl,--disable-new-dtags)
 	set_target_properties(UnrealGeometryEncoder PROPERTIES
 		CXX_VISIBILITY_PRESET hidden
-		SKIP_BUILD_RPATH ON
+		BUILD_WITH_INSTALL_RPATH ON
+		INSTALL_RPATH "$ORIGIN/../../../../PRT/bin/Linux/Release:$ORIGIN/../../../../PRT/lib/Linux/Release"
 	)
 else()
 	target_compile_options(UnrealGeometryEncoder PRIVATE /bigobj /GR /EHsc)
