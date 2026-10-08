@@ -373,7 +373,7 @@ void UnrealCallbacks::addInstance(int32_t prototypeId, const wchar_t* meshId, co
 
 	if (!InstanceMeshes.Contains(WCHAR_TO_TCHAR(meshId)))
 	{
-		UE_LOG(LogUnrealCallbacks, Warning, TEXT("No mesh found for meshId %s"), meshId);
+		UE_LOG(LogUnrealCallbacks, Warning, TEXT("No mesh found for meshId %s"), WCHAR_TO_TCHAR(meshId));
 		return;
 	}
 

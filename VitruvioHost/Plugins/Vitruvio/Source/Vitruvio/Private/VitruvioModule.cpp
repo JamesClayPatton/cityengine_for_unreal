@@ -413,7 +413,7 @@ Vitruvio::FTextureData VitruvioModule::DecodeTexture(UObject* Outer, const FStri
 	size_t BufferSize = TextureMetadata.Width * TextureMetadata.Height * TextureMetadata.Bands * TextureMetadata.BytesPerBand;
 	auto Buffer = std::make_unique<uint8_t[]>(BufferSize);
 
-	prt::getTexturePixeldata(*Path, Buffer.get(), BufferSize, PrtCache.get());
+	prt::getTexturePixeldata(TCHAR_TO_WCHAR(*Path), Buffer.get(), BufferSize, PrtCache.get());
 
 	return Vitruvio::DecodeTexture(Outer, Key, Path, TextureMetadata, std::move(Buffer), BufferSize);
 }
@@ -873,7 +873,7 @@ FAttributeMapResult VitruvioModule::EvaluateRuleAttributesAsync(FInitialShape In
 		RuleFileInfoUPtr RuleInfo(prt::createRuleFileInfo(RuleFileUri, PrtCache.get(), &InfoStatus));
 		if (!RuleInfo || InfoStatus != prt::STATUS_OK)
 		{
-			UE_LOG(LogUnrealPrt, Error, TEXT("could not get rule file info from rule file %s"), RuleFileUri)
+			UE_LOG(LogUnrealPrt, Error, TEXT("could not get rule file info from rule file %s"), WCHAR_TO_TCHAR(RuleFileUri))
 			return FAttributeMapResult::ResultType{
 				InvalidationToken,
 				nullptr,
