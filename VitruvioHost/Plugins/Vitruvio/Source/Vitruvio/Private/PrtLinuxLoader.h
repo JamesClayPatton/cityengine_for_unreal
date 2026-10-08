@@ -15,6 +15,8 @@
 
 #pragma once
 
+#include "HAL/Platform.h"
+
 #if PLATFORM_LINUX
 
 #include <string>
