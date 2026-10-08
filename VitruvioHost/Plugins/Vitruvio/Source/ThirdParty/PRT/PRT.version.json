@@ -3,5 +3,9 @@
 	"minor": 4,
 	"build": 12206,
 	"toolchain": "win10-vc1444-x86_64-rel-opt",
-	"sha256": "dffd37ea97b3d39f71321cb3a08331feda0ec80cd33ac81c16b8a2d2a2e379a5"
+	"sha256": "dffd37ea97b3d39f71321cb3a08331feda0ec80cd33ac81c16b8a2d2a2e379a5",
+	"linux": {
+		"toolchain": "rhel8-gcc142-x86_64-rel-opt",
+		"sha256": "1cad08b973a1141878df23fdb6635b7b76c19e07891f2365d13270e93e1d4429"
+	}
 }
