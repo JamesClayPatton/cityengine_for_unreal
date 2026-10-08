@@ -26,11 +26,20 @@ namespace
 {
 const FString DEFAULT_STYLE = TEXT("Default");
 
-std::vector<const wchar_t*> ToPtrVector(const TArray<FString>& Input)
+std::vector<std::wstring> ToWStringVector(const TArray<FString>& Input)
 {
-	std::vector<const wchar_t*> PtrVec(Input.Num());
-	for (size_t i = 0; i < Input.Num(); i++)
-		PtrVec[i] = *Input[i];
+	std::vector<std::wstring> WStringVec;
+	WStringVec.reserve(Input.Num());
+	for (const FString& Value : Input)
+		WStringVec.emplace_back(TCHAR_TO_WCHAR(*Value));
+	return WStringVec;
+}
+
+std::vector<const wchar_t*> ToPtrVector(const std::vector<std::wstring>& Input)
+{
+	std::vector<const wchar_t*> PtrVec(Input.size());
+	for (size_t i = 0; i < Input.size(); i++)
+		PtrVec[i] = Input[i].c_str();
 	return PtrVec;
 }
 
@@ -69,7 +78,7 @@ URuleAttribute* CreateAttribute(const AttributeMapUPtr& AttributeMap, const prt:
 		const wchar_t* const* Arr = AttributeMap->getStringArray(Name.c_str(), &Count);
 		for (size_t Index = 0; Index < Count; Index++)
 		{
-			StringArrayAttribute->Values.Add(Arr[Index]);
+			StringArrayAttribute->Values.Add(WCHAR_TO_TCHAR(Arr[Index]));
 		}
 		StringArrayAttribute->SetFlags(RF_Transactional);
 		return StringArrayAttribute;
@@ -460,7 +469,10 @@ AttributeMapUPtr CreateAttributeMap(const TMap<FString, URuleAttribute*>& Attrib
 		}
 		else if (const UStringArrayAttribute* StringArrayAttribute = Cast<UStringArrayAttribute>(Attribute))
 		{
-			std::vector<const wchar_t*> PtrVec = ToPtrVector(StringArrayAttribute->Values);
+			// TCHAR_TO_WCHAR returns a temporary buffer on platforms where TCHAR and wchar_t differ (e.g. Linux),
+			// so keep the converted strings alive while PRT reads them
+			const std::vector<std::wstring> Values = ToWStringVector(StringArrayAttribute->Values);
+			std::vector<const wchar_t*> PtrVec = ToPtrVector(Values);
 			AttributeMapBuilder->setStringArray(TCHAR_TO_WCHAR(*Attribute->Name), PtrVec.data(), StringArrayAttribute->Values.Num());
 		}
 		else if (const UBoolArrayAttribute* BoolArrayAttribute = Cast<UBoolArrayAttribute>(Attribute))
