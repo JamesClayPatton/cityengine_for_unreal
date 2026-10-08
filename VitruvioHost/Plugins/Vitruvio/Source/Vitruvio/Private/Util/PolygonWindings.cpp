@@ -13,8 +13,6 @@
  * limitations under the License.
  */
 
-#pragma once
-
 #include "PolygonWindings.h"
 
 #include "Engine/Polys.h"
