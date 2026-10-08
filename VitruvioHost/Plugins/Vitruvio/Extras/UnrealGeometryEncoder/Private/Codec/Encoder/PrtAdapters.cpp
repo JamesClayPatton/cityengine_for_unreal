@@ -17,7 +17,7 @@
 
 #include "Codec/Encoder/PrtAdapters.h"
 
-#include "CodecMain.h"
+#include "Codec/CodecMain.h"
 
 namespace
 {
