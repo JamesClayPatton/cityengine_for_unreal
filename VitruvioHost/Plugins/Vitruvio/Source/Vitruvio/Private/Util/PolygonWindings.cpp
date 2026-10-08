@@ -81,7 +81,7 @@ bool PointInPolygon2D(const FVector& Point, const TArray<int32>& PolygonIndices,
 	{
 		const FVector& Current = PolygonVertices[PolygonIndices[Index]];
 		const FVector& Next = PolygonVertices[PolygonIndices[Index + 1 >= PolygonIndices.Num() ? 0 : Index + 1]];
-		if (Current.Y < Point.Y && Next.Y >= Point.Y || Next.Y < Point.Y && Current.Y >= Point.Y)
+		if ((Current.Y < Point.Y && Next.Y >= Point.Y) || (Next.Y < Point.Y && Current.Y >= Point.Y))
 		{
 			if (Current.X + (Point.Y - Current.Y) / (Next.Y - Current.Y) * (Next.X - Current.X) < Point.X)
 			{
