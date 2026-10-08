@@ -29,6 +29,8 @@ public class PRT : ModuleRules
 	private readonly bool Debug;
 
 
+	private static readonly object PrtInstallLock = new object();
+
 	private static readonly List<string> FilteredExtensionLibraries = new List<string>() { "DatasmithSDK.dll", "FreeImage317.dll", "com.esri.prt.unreal.dll" };
 
 	public PRT(ReadOnlyTargetRules Target) : base(Target)
@@ -72,76 +74,80 @@ public class PRT : ModuleRules
 		string BinDir = Path.Combine(ModuleDirectory, "bin", Platform.Name, "Release");
 		string IncludeDir = Path.Combine(ModuleDirectory, "include");
 
-		// 1. Check if prt is already available and has correct version, otherwise download from official github repo
-		// The include folder is shared between platforms and is removed when downloading PRT for another platform
-		bool PrtInstalled = Directory.Exists(LibDir) && Directory.Exists(BinDir) && File.Exists(Path.Combine(IncludeDir, "prt", "API.h"));
+		// Build rules of several targets (e.g. editor and Linux game) can be created in parallel and share the include folder
+		lock (PrtInstallLock)
+		{
+			// 1. Check if prt is already available and has correct version, otherwise download from official github repo
+			// The include folder is shared between platforms and is removed when downloading PRT for another platform
+			bool PrtInstalled = Directory.Exists(LibDir) && Directory.Exists(BinDir) && File.Exists(Path.Combine(IncludeDir, "prt", "API.h"));
 		
-		string PrtCorePath = Path.Combine(BinDir, Platform.CoreLibraryName);
-		bool PrtCoreExists = File.Exists(PrtCorePath);
-		bool PrtVersionMatch = PrtCoreExists && CheckDllVersion(Platform, PrtCorePath, PrtMajor, PrtMinor, PrtBuild);
+			string PrtCorePath = Path.Combine(BinDir, Platform.CoreLibraryName);
+			bool PrtCoreExists = File.Exists(PrtCorePath);
+			bool PrtVersionMatch = PrtCoreExists && CheckDllVersion(Platform, PrtCorePath, PrtMajor, PrtMinor, PrtBuild);
 
-		if (!PrtInstalled || !PrtVersionMatch)
-		{
-
-			string PrtUrl = "https://github.com/Esri/esri-cityengine-sdk/releases/download";
-			string PrtVersion = string.Format("{0}.{1}.{2}", PrtMajor, PrtMinor, PrtBuild);
-
-			string PrtLibName = string.Format("esri_ce_sdk-{0}-{1}", PrtVersion, PrtToolchain);
-			string PrtLibZipFile = PrtLibName + ".zip";
-			string PrtLibZipPath = Path.Combine(ModuleDirectory, PrtLibZipFile);
-			string PrtDownloadUrl = Path.Combine(PrtUrl, PrtVersion, PrtLibZipFile);
-
-			try
+			if (!PrtInstalled || !PrtVersionMatch)
 			{
-				if (Debug)
-				{
-					if (!PrtInstalled) Console.WriteLine("PRT not found");
-					Console.WriteLine("Updating PRT");
-				}
 
-				if (Debug) System.Console.WriteLine("Downloading " + PrtDownloadUrl + "...");
+				string PrtUrl = "https://github.com/Esri/esri-cityengine-sdk/releases/download";
+				string PrtVersion = string.Format("{0}.{1}.{2}", PrtMajor, PrtMinor, PrtBuild);
+
+				string PrtLibName = string.Format("esri_ce_sdk-{0}-{1}", PrtVersion, PrtToolchain);
+				string PrtLibZipFile = PrtLibName + ".zip";
+				string PrtLibZipPath = Path.Combine(ModuleDirectory, PrtLibZipFile);
+				string PrtDownloadUrl = Path.Combine(PrtUrl, PrtVersion, PrtLibZipFile);
+
+				try
+				{
+					if (Debug)
+					{
+						if (!PrtInstalled) Console.WriteLine("PRT not found");
+						Console.WriteLine("Updating PRT");
+					}
+
+					if (Debug) System.Console.WriteLine("Downloading " + PrtDownloadUrl + "...");
 				
-				Platform.DownloadFile(PrtDownloadUrl, PrtLibZipPath);
+					Platform.DownloadFile(PrtDownloadUrl, PrtLibZipPath);
 
-				string ActualSha256;
-				using (FileStream Archive = File.OpenRead(PrtLibZipPath))
-				using (SHA256 Hasher = SHA256.Create())
-				{
-					ActualSha256 = Convert.ToHexString(Hasher.ComputeHash(Archive));
+					string ActualSha256;
+					using (FileStream Archive = File.OpenRead(PrtLibZipPath))
+					using (SHA256 Hasher = SHA256.Create())
+					{
+						ActualSha256 = Convert.ToHexString(Hasher.ComputeHash(Archive));
+					}
+
+					if (!string.Equals(ActualSha256, PrtSha256, StringComparison.OrdinalIgnoreCase))
+					{
+						throw new BuildException($"SHA-256 mismatch for PRT SDK '{PrtLibZipFile}': expected {PrtSha256}, got {ActualSha256}.");
+					}
+
+					if (Directory.Exists(LibDir)) Directory.Delete(LibDir, true);
+					if (Directory.Exists(BinDir)) Directory.Delete(BinDir, true);
+					if (Directory.Exists(IncludeDir)) Directory.Delete(IncludeDir, true);
+
+					if (Debug) System.Console.WriteLine("Extracting " + PrtLibZipFile + "...");
+
+					Platform.ZipExtractor.Unzip(ModuleDirectory, PrtLibZipFile, PrtLibName);
+
+					Directory.CreateDirectory(LibDir);
+					Directory.CreateDirectory(BinDir);
+					Copy(Path.Combine(ModuleDirectory, PrtLibName, "lib"), Path.Combine(ModuleDirectory, LibDir), FilteredExtensionLibraries);
+					Copy(Path.Combine(ModuleDirectory, PrtLibName, "bin"), Path.Combine(ModuleDirectory, BinDir));
+					Copy(Path.Combine(ModuleDirectory, PrtLibName, "include"), Path.Combine(ModuleDirectory, "include"));
+
+					string VersionFile = Path.Combine(ModuleDirectory, PrtLibName, "cmake", "prtVersion.properties");
+					if (File.Exists(VersionFile)) File.Copy(VersionFile, Path.Combine(BinDir, "prtVersion.properties"));
 				}
-
-				if (!string.Equals(ActualSha256, PrtSha256, StringComparison.OrdinalIgnoreCase))
+				finally
 				{
-					throw new BuildException($"SHA-256 mismatch for PRT SDK '{PrtLibZipFile}': expected {PrtSha256}, got {ActualSha256}.");
+					File.Delete(PrtLibZipPath);
+					string ExtractedDirectory = Path.Combine(ModuleDirectory, PrtLibName);
+					if (Directory.Exists(ExtractedDirectory)) Directory.Delete(ExtractedDirectory, true);
 				}
-
-				if (Directory.Exists(LibDir)) Directory.Delete(LibDir, true);
-				if (Directory.Exists(BinDir)) Directory.Delete(BinDir, true);
-				if (Directory.Exists(IncludeDir)) Directory.Delete(IncludeDir, true);
-
-				if (Debug) System.Console.WriteLine("Extracting " + PrtLibZipFile + "...");
-
-				Platform.ZipExtractor.Unzip(ModuleDirectory, PrtLibZipFile, PrtLibName);
-
-				Directory.CreateDirectory(LibDir);
-				Directory.CreateDirectory(BinDir);
-				Copy(Path.Combine(ModuleDirectory, PrtLibName, "lib"), Path.Combine(ModuleDirectory, LibDir), FilteredExtensionLibraries);
-				Copy(Path.Combine(ModuleDirectory, PrtLibName, "bin"), Path.Combine(ModuleDirectory, BinDir));
-				Copy(Path.Combine(ModuleDirectory, PrtLibName, "include"), Path.Combine(ModuleDirectory, "include"));
-
-				string VersionFile = Path.Combine(ModuleDirectory, PrtLibName, "cmake", "prtVersion.properties");
-				if (File.Exists(VersionFile)) File.Copy(VersionFile, Path.Combine(BinDir, "prtVersion.properties"));
 			}
-			finally
+			else if (Debug)
 			{
-				File.Delete(PrtLibZipPath);
-				string ExtractedDirectory = Path.Combine(ModuleDirectory, PrtLibName);
-				if (Directory.Exists(ExtractedDirectory)) Directory.Delete(ExtractedDirectory, true);
+				Console.WriteLine("PRT found");
 			}
-		}
-		else if (Debug)
-		{
-			Console.WriteLine("PRT found");
 		}
 		
 		// 2. Copy libraries to module binaries directory and add dependencies
