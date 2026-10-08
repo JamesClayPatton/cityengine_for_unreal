@@ -585,7 +585,13 @@ void UnrealGeometryEncoder::init(prtx::GenerateContext&)
 	
 	mEncPrep = prtx::EncodePreparator::create(true, mNamePrep, mNsMesh, mNsMaterial);
 
+#if defined(__linux__)
+	// On Linux the callbacks object is created by Unreal (libc++) while this encoder uses libstdc++ like PRT, so the
+	// type information of both sides cannot be matched by dynamic_cast. Vitruvio is the only consumer of this encoder.
+	auto* callbacks = static_cast<IUnrealCallbacks*>(getCallbacks());
+#else
 	auto* callbacks = dynamic_cast<IUnrealCallbacks*>(getCallbacks());
+#endif
 	if (callbacks == nullptr)
 		throw prtx::StatusException(prt::STATUS_ILLEGAL_CALLBACK_OBJECT);
 
