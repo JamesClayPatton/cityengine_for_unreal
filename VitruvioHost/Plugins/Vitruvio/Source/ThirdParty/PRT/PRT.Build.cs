@@ -218,7 +218,7 @@ public class PRT : ModuleRules
 
 	private abstract class AbstractZipExtractor
 	{
-		public virtual void Unzip(string WorkingDir, string ZipFile, string Destination)
+		public void Unzip(string WorkingDir, string ZipFile, string Destination)
 		{
 			string ExpandedArguments = string.Format(Arguments, ZipFile, Destination);
 
@@ -238,17 +238,8 @@ public class PRT : ModuleRules
 			UnzipProcess.WaitForExit();
 		}
 
-		public virtual string Command { get { return string.Empty; } }
-		public virtual string Arguments { get { return string.Empty; } }
-	}
-
-	// Uses .NET directly since the build host is not necessarily the target platform (e.g. cross-compiling for Linux on Windows)
-	private class DotNetZipExtractor : AbstractZipExtractor
-	{
-		public override void Unzip(string WorkingDir, string ZipFile, string Destination)
-		{
-			System.IO.Compression.ZipFile.ExtractToDirectory(Path.Combine(WorkingDir, ZipFile), Path.Combine(WorkingDir, Destination));
-		}
+		public abstract string Command { get; }
+		public abstract string Arguments { get; }
 	}
 
 	private class WindowsZipExtractor : AbstractZipExtractor
@@ -262,6 +253,12 @@ public class PRT : ModuleRules
 				return "/c PowerShell -Command \" & Expand-Archive -Path {0} -DestinationPath {1}\"";
 			}
 		}
+	}
+
+	private class UnixZipExtractor : AbstractZipExtractor
+	{
+		public override string Command { get { return "unzip"; } }
+		public override string Arguments { get { return "-q {0} -d {1}"; } }
 	}
 
 	private abstract class AbstractPlatform
@@ -378,7 +375,11 @@ public class PRT : ModuleRules
 
 	private class LinuxPlatform : AbstractPlatform
 	{
-		public override AbstractZipExtractor ZipExtractor { get { return new DotNetZipExtractor(); } }
+		// Download and extraction run on the build host, which is Windows when cross-compiling
+		public override AbstractZipExtractor ZipExtractor
+		{
+			get { return OperatingSystem.IsWindows() ? new WindowsZipExtractor() : new UnixZipExtractor(); }
+		}
 
 		public override string Name { get { return "Linux"; } }
 		public override string DynamicLibExtension { get { return ".so"; } }
@@ -417,11 +418,25 @@ public class PRT : ModuleRules
 
 		public override void DownloadFile(string Url, string Destination)
 		{
-			using (System.Net.Http.HttpClient Client = new System.Net.Http.HttpClient())
+			if (OperatingSystem.IsWindows())
 			{
-				byte[] Data = Client.GetByteArrayAsync(Url.Replace('\\', '/')).Result;
-				File.WriteAllBytes(Destination, Data);
+				new WindowsPlatform(Debug).DownloadFile(Url, Destination);
+				return;
 			}
+
+			ProcessStartInfo ProcStartInfo = new ProcessStartInfo("curl", string.Format("-L -s -o \"{0}\" {1}", Destination, Url))
+			{
+				UseShellExecute = false,
+				CreateNoWindow = true,
+			};
+
+			Process DownloadProcess = new Process
+			{
+				StartInfo = ProcStartInfo,
+				EnableRaisingEvents = true
+			};
+			DownloadProcess.Start();
+			DownloadProcess.WaitForExit();
 		}
 	}
 }
