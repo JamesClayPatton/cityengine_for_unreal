@@ -237,6 +237,11 @@ public class PRT : ModuleRules
 			};
 			UnzipProcess.Start();
 			UnzipProcess.WaitForExit();
+
+			if (UnzipProcess.ExitCode != 0)
+			{
+				throw new BuildException("Failed to extract {0} (exit code {1}), check that the PRT download succeeded", ZipFile, UnzipProcess.ExitCode);
+			}
 		}
 
 		public abstract string Command { get; }
@@ -425,7 +430,7 @@ public class PRT : ModuleRules
 				return;
 			}
 
-			ProcessStartInfo ProcStartInfo = new ProcessStartInfo("curl", string.Format("-L -s -o \"{0}\" {1}", Destination, Url))
+			ProcessStartInfo ProcStartInfo = new ProcessStartInfo("curl", string.Format("-fsSL -o \"{0}\" {1}", Destination, Url))
 			{
 				UseShellExecute = false,
 				CreateNoWindow = true,
@@ -438,6 +443,11 @@ public class PRT : ModuleRules
 			};
 			DownloadProcess.Start();
 			DownloadProcess.WaitForExit();
+
+			if (DownloadProcess.ExitCode != 0)
+			{
+				throw new BuildException("Failed to download {0} (curl exit code {1})", Url, DownloadProcess.ExitCode);
+			}
 		}
 	}
 }
